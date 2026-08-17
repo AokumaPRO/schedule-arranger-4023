@@ -14,6 +14,7 @@ const { githubAuth } = require('@hono/oauth-providers/github');
 const { googleAuth } = require('@hono/oauth-providers/google');
 const { getIronSession } = require('iron-session');
 const { PrismaClient } = require('@prisma/client');
+const accountRouter = require('./routes/account'); // 追加
 const layout = require('./layout');
 
 const prisma = new PrismaClient({ log: ['query'] });
@@ -96,11 +97,12 @@ app.get('/auth/github', async (c) => {
 });
 // Google 認証
 app.use('/auth/google', async (c, next) => {
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env(c);
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } = env(c);
   const authHandler = googleAuth({
     client_id: GOOGLE_CLIENT_ID,
     client_secret: GOOGLE_CLIENT_SECRET,
     scope: ['openid', 'email', 'profile'],
+    redirect_uri: GOOGLE_REDIRECT_URI,
   });
   return await authHandler(c, next);
 });
@@ -137,6 +139,7 @@ app.get('/auth/google', async (c) => {
 
 // ルーティング
 app.route('/', indexRouter);
+app.route('/account', accountRouter); // 追加
 app.route('/login', loginRouter);
 app.route('/logout', logoutRouter);
 app.route('/schedules', scheduleRouter);

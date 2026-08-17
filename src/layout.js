@@ -33,8 +33,11 @@ function layout(c, title, body) {
                 ${user
                   ? html`
                       <li class="nav-item">
+                        <a class="nav-link" href="/account">${user.login} (アカウント設定)</a>
+                      </li>
+                      <li class="nav-item">
                         <a class="nav-link" href="/logout"
-                          >${user.login} をログアウト</a
+                          >ログアウト</a
                         >
                       </li>
                     `
