@@ -11,7 +11,7 @@ const paramValidator = zValidator(
   'param',
   z.object({
     scheduleId: z.string().uuid(),
-    userId: z.coerce.number().int().min(0),
+    userId: z.string().min(1), // 修正
   }),
   (result, c) => {
     if (!result.success) {

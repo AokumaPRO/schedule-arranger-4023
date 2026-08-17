@@ -10,7 +10,7 @@ app.post(
   ensureAuthenticated(),
   async (c) => {
     const scheduleId = c.req.param('scheduleId');
-    const userId = parseInt(c.req.param('userId'), 10);
+    const userId = c.req.param('userId'); // parseInt を削除
     const candidateId = parseInt(c.req.param('candidateId'), 10);
 
     const body = await c.req.json();
