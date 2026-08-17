@@ -11,6 +11,7 @@ const { getCookie, deleteCookie } = require('hono/cookie');
 const { serveStatic } = require('@hono/node-server/serve-static');
 const { trimTrailingSlash } = require('hono/trailing-slash');
 const { githubAuth } = require('@hono/oauth-providers/github');
+const { googleAuth } = require('@hono/oauth-providers/google');
 const { getIronSession } = require('iron-session');
 const { PrismaClient } = require('@prisma/client');
 const layout = require('./layout');
@@ -68,12 +69,11 @@ app.get('/auth/github', async (c) => {
   const session = c.get('session');
   const githubUser = c.get('user-github');
   session.user = {
-    id: githubUser.id,
+    id: `github_${githubUser.id}`,
     login: githubUser.login
   }
   await session.save();
 
-  // ユーザ情報をデータベースに保存
   const userId = session.user.id;
   const data = {
     userId,
@@ -87,6 +87,46 @@ app.get('/auth/github', async (c) => {
 
   const loginFrom = getCookie(c, 'loginFrom');
   // オープンリダイレクタ脆弱性対策
+  if (loginFrom && /^\/(?!\/)[\w\-./?=&%+#:]*$/.test(loginFrom)) {
+    deleteCookie(c, 'loginFrom');
+    return c.redirect(loginFrom);
+  } else {
+    return c.redirect('/');
+  }
+});
+// Google 認証
+app.use('/auth/google', async (c, next) => {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env(c);
+  const authHandler = googleAuth({
+    client_id: GOOGLE_CLIENT_ID,
+    client_secret: GOOGLE_CLIENT_SECRET,
+    scope: ['openid', 'email', 'profile'],
+  });
+  return await authHandler(c, next);
+});
+// Google 認証の後の処理
+app.get('/auth/google', async (c) => {
+  const session = c.get('session');
+  const googleUser = c.get('user-google');
+
+  session.user = {
+    id: `google_${googleUser.id}`,
+    login: googleUser.email,
+  };
+  await session.save();
+
+  const userId = session.user.id;
+  const data = {
+    userId,
+    username: session.user.login,
+  };
+  await prisma.user.upsert({
+    where: { userId },
+    update: data,
+    create: data,
+  });
+
+  const loginFrom = getCookie(c, 'loginFrom');
   if (loginFrom && /^\/(?!\/)[\w\-./?=&%+#:]*$/.test(loginFrom)) {
     deleteCookie(c, 'loginFrom');
     return c.redirect(loginFrom);

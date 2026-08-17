@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,7 +8,7 @@ datasource db {
 }
 
 model User {
-  userId         Int            @id
+  userId         String         @id @db.VarChar(255)
   username       String         @unique @db.VarChar(255)
   availabilities Availability[]
   schedules      Schedule[]
@@ -27,7 +21,7 @@ model Schedule {
   scheduleId   String      @id @db.Uuid
   scheduleName String      @db.VarChar(255)
   memo         String      @db.Text
-  createdBy    Int
+  createdBy    String
   updatedAt    DateTime    @db.Timestamptz(6)
   user         User        @relation(fields: [createdBy], references: [userId], onDelete: Cascade)
   candidates   Candidate[]
@@ -51,7 +45,7 @@ model Candidate {
 
 model Availability {
   candidateId  Int
-  userId       Int
+  userId       String
   availability Int       @default(0)
   scheduleId   String    @db.Uuid
   candidate    Candidate @relation(fields: [candidateId, scheduleId], references: [candidateId, scheduleId], onDelete: Cascade)
@@ -64,7 +58,7 @@ model Availability {
 
 model Comment {
   scheduleId String   @db.Uuid
-  userId     Int
+  userId     String
   comment    String   @db.VarChar(255)
   user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   schedule   Schedule @relation(fields: [scheduleId], references: [scheduleId], onDelete: Cascade)

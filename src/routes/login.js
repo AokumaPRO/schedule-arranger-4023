@@ -18,6 +18,9 @@ app.get('/', (c) => {
         <a href="/auth/github" class="btn btn-primary my-3">
           GitHub でログイン
         </a>
+        <a href="/auth/google" class="btn btn-outline-danger my-3">
+          Google でログイン
+        </a>
       `,
     ),
   );

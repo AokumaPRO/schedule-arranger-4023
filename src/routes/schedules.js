@@ -266,7 +266,7 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
 });
 
 function isMine(userId, schedule) {
-  return schedule && parseInt(schedule.createdBy, 10) === parseInt(userId, 10);
+  return schedule && schedule.createdBy === userId;
 }
 
 app.get('/:scheduleId/edit', scheduleIdValidator, async (c) => {
