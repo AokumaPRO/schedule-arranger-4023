@@ -69,25 +69,24 @@ app.use('/auth/github', async (c, next) => {
 app.get('/auth/github', async (c) => {
   const session = c.get('session');
   const githubUser = c.get('user-github');
-  session.user = {
-    id: `github_${githubUser.id}`,
-    login: githubUser.login
+  const userId = `github_${githubUser.id}`;
+
+  // 既存ユーザーか確認
+  const existingUser = await prisma.user.findUnique({ where: { userId } });
+
+  if (existingUser) {
+    // 既存ユーザーなら、DBに保存済みのユーザー名を使う（上書きしない）
+    session.user = { id: userId, login: existingUser.username };
+  } else {
+    // 新規ユーザーなら作成
+    session.user = { id: userId, login: githubUser.login };
+    await prisma.user.create({
+      data: { userId, username: githubUser.login },
+    });
   }
   await session.save();
 
-  const userId = session.user.id;
-  const data = {
-    userId,
-    username: session.user.login,
-  };
-  await prisma.user.upsert({
-    where: { userId },
-    update: data,
-    create: data,
-  });
-
   const loginFrom = getCookie(c, 'loginFrom');
-  // オープンリダイレクタ脆弱性対策
   if (loginFrom && /^\/(?!\/)[\w\-./?=&%+#:]*$/.test(loginFrom)) {
     deleteCookie(c, 'loginFrom');
     return c.redirect(loginFrom);
@@ -106,27 +105,24 @@ app.use('/auth/google', async (c, next) => {
   });
   return await authHandler(c, next);
 });
+
 // Google 認証の後の処理
 app.get('/auth/google', async (c) => {
   const session = c.get('session');
   const googleUser = c.get('user-google');
+  const userId = `google_${googleUser.id}`;
 
-  session.user = {
-    id: `google_${googleUser.id}`,
-    login: googleUser.email,
-  };
+  const existingUser = await prisma.user.findUnique({ where: { userId } });
+
+  if (existingUser) {
+    session.user = { id: userId, login: existingUser.username };
+  } else {
+    session.user = { id: userId, login: googleUser.email };
+    await prisma.user.create({
+      data: { userId, username: googleUser.email },
+    });
+  }
   await session.save();
-
-  const userId = session.user.id;
-  const data = {
-    userId,
-    username: session.user.login,
-  };
-  await prisma.user.upsert({
-    where: { userId },
-    update: data,
-    create: data,
-  });
 
   const loginFrom = getCookie(c, 'loginFrom');
   if (loginFrom && /^\/(?!\/)[\w\-./?=&%+#:]*$/.test(loginFrom)) {
