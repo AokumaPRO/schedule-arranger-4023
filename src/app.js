@@ -28,6 +28,16 @@ const commentsRouter = require('./routes/comments');
 
 const app = new Hono();
 
+// ユーザー名が重複する場合、末尾に連番を付けて一意な名前を作る
+async function createUniqueUser(userId, baseUsername) {
+  let username = baseUsername;
+  let suffix = 1;
+  while (await prisma.user.findUnique({ where: { username } })) {
+    username = `${baseUsername}_${suffix}`;
+    suffix++;
+  }
+  return prisma.user.create({ data: { userId, username } });
+}
 app.use(async (c, next) => {
   const { CSRF_TRUSTED_ORIGIN } = env(c);
   const handler = csrf({
@@ -64,25 +74,19 @@ app.use('/auth/github', async (c, next) => {
   });
   return await authHandler(c, next);
 });
-
 // GitHub 認証の後の処理
 app.get('/auth/github', async (c) => {
   const session = c.get('session');
   const githubUser = c.get('user-github');
   const userId = `github_${githubUser.id}`;
 
-  // 既存ユーザーか確認
   const existingUser = await prisma.user.findUnique({ where: { userId } });
 
   if (existingUser) {
-    // 既存ユーザーなら、DBに保存済みのユーザー名を使う（上書きしない）
     session.user = { id: userId, login: existingUser.username };
   } else {
-    // 新規ユーザーなら作成
-    session.user = { id: userId, login: githubUser.login };
-    await prisma.user.create({
-      data: { userId, username: githubUser.login },
-    });
+    const newUser = await createUniqueUser(userId, githubUser.login);
+    session.user = { id: userId, login: newUser.username };
   }
   await session.save();
 
@@ -117,10 +121,8 @@ app.get('/auth/google', async (c) => {
   if (existingUser) {
     session.user = { id: userId, login: existingUser.username };
   } else {
-    session.user = { id: userId, login: googleUser.email };
-    await prisma.user.create({
-      data: { userId, username: googleUser.email },
-    });
+    const newUser = await createUniqueUser(userId, googleUser.email);
+    session.user = { id: userId, login: newUser.username };
   }
   await session.save();
 
