@@ -125,6 +125,13 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
     return c.notFound();
   }
 
+  // 保存済みか確認
+  const bookmark = await prisma.bookmark.findUnique({
+    where: {
+      userId_scheduleId: { userId: user.id, scheduleId: schedule.scheduleId },
+    },
+  });
+
   const candidates = await prisma.candidate.findMany({
     where: { scheduleId: schedule.scheduleId },
     orderBy: { candidateId: 'asc' },
@@ -186,7 +193,7 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
         </div>
         ${isMine(user.id, schedule)
           ? html`
-              <a
+              
                 href="/schedules/${schedule.scheduleId}/edit"
                 class="btn btn-primary"
               >
@@ -200,6 +207,11 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
         >
           リンクをコピー <i class="bi bi-clipboard"></i>
         </button>
+        <form method="post" action="/schedules/${schedule.scheduleId}/bookmark" style="display:inline;">
+          <button type="submit" class="btn ${bookmark ? 'btn-warning' : 'btn-outline-warning'}">
+            ${bookmark ? '保存済み ★' : '保存する ☆'}
+          </button>
+        </form>
         <h3 class="my-3">出欠表</h3>
         <div class="table-responsive">
           <table class="table table-bordered">
@@ -385,6 +397,29 @@ app.post('/:scheduleId/delete', scheduleIdValidator, async (c) => {
 
   await deleteScheduleAggregate(schedule.scheduleId);
   return c.redirect('/');
+});
+
+app.post('/:scheduleId/bookmark', scheduleIdValidator, async (c) => {
+  const { user } = c.get('session') ?? {};
+  const scheduleId = c.req.valid('param').scheduleId;
+
+  const existing = await prisma.bookmark.findUnique({
+    where: {
+      userId_scheduleId: { userId: user.id, scheduleId },
+    },
+  });
+
+  if (existing) {
+    await prisma.bookmark.delete({
+      where: { userId_scheduleId: { userId: user.id, scheduleId } },
+    });
+  } else {
+    await prisma.bookmark.create({
+      data: { userId: user.id, scheduleId },
+    });
+  }
+
+  return c.redirect('/schedules/' + scheduleId);
 });
 
 module.exports = app;

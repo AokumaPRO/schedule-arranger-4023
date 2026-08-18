@@ -13,6 +13,7 @@ model User {
   availabilities Availability[]
   schedules      Schedule[]
   comments       Comment[]
+  bookmarks      Bookmark[]   
 
   @@map(name: "users")
 }
@@ -26,6 +27,7 @@ model Schedule {
   user         User        @relation(fields: [createdBy], references: [userId], onDelete: Cascade)
   candidates   Candidate[]
   comments     Comment[]
+  bookmarks    Bookmark[] 
 
   @@index(fields: [createdBy])
   @@map(name: "schedules")
@@ -65,4 +67,16 @@ model Comment {
 
   @@id([scheduleId, userId], name: "commentCompositeId")
   @@map(name: "comments")
+}
+
+model Bookmark {
+  userId     String
+  scheduleId String   @db.Uuid
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  schedule   Schedule @relation(fields: [scheduleId], references: [scheduleId], onDelete: Cascade)
+
+  @@id([userId, scheduleId])
+  @@index(fields: [scheduleId])
+  @@map(name: "bookmarks")
 }
