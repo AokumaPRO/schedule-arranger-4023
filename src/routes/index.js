@@ -38,13 +38,22 @@ function scheduleTable(schedules) {
 
 app.get('/', async (c) => {
   const { user } = c.get('session') ?? {};
-  const schedules = user
+
+  const ownedSchedules = user
     ? await prisma.schedule.findMany({
-      where: { createdBy: user.id },
-      orderBy: { updatedAt: 'desc' },
-    })
+        where: { createdBy: user.id },
+        orderBy: { updatedAt: 'desc' },
+      })
     : [];
-  schedules.forEach((schedule) => {
+
+  const bookmarkedSchedules = user
+    ? await prisma.schedule.findMany({
+        where: { bookmarks: { some: { userId: user.id } } },
+        orderBy: { updatedAt: 'desc' },
+      })
+    : [];
+
+  [...ownedSchedules, ...bookmarkedSchedules].forEach((schedule) => {
     schedule.formattedUpdatedAt = dayjs(schedule.updatedAt).tz().format('YYYY/MM/DD HH:mm');
   });
 
@@ -66,10 +75,16 @@ app.get('/', async (c) => {
               <div class="my-3">
                 <h3 class="my-3">予定を作る</h3>
                 <a class="btn btn-primary" href="/schedules/new">予定を作る</a>
-                ${schedules.length > 0
+                ${ownedSchedules.length > 0
                   ? html`
                       <h3 class="my-3">あなたの作った予定一覧</h3>
-                      ${scheduleTable(schedules)}
+                      ${scheduleTable(ownedSchedules)}
+                    `
+                  : ''}
+                ${bookmarkedSchedules.length > 0
+                  ? html`
+                      <h3 class="my-3">保存した予定一覧</h3>
+                      ${scheduleTable(bookmarkedSchedules)}
                     `
                   : ''}
               </div>
