@@ -193,7 +193,7 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
         </div>
         ${isMine(user.id, schedule)
           ? html`
-              
+              <a
                 href="/schedules/${schedule.scheduleId}/edit"
                 class="btn btn-primary"
               >
