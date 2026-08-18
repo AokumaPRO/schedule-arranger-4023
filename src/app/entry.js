@@ -49,3 +49,16 @@ buttonSelfComment.on('click', () => {
       });
   }
 });
+const buttonCopyLink = $('.copy-link-button');
+buttonCopyLink.on('click', () => {
+  const url = buttonCopyLink.data('url');
+  const fullUrl = `${location.origin}${url}`;
+
+  navigator.clipboard.writeText(fullUrl).then(() => {
+    const original = buttonCopyLink.text();
+    buttonCopyLink.text('コピーしました！');
+    setTimeout(() => {
+      buttonCopyLink.text(original);
+    }, 2000);
+  });
+});

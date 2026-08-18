@@ -193,6 +193,13 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
                 この予定を編集する <i class="bi bi-pencil"></i>
               </a>`
           : ''}
+        <button
+          type="button"
+          class="btn btn-outline-secondary copy-link-button"
+          data-url="/schedules/${schedule.scheduleId}"
+        >
+          リンクをコピー <i class="bi bi-clipboard"></i>
+        </button>
         <h3 class="my-3">出欠表</h3>
         <div class="table-responsive">
           <table class="table table-bordered">
@@ -264,7 +271,6 @@ app.get('/:scheduleId', scheduleIdValidator, async (c) => {
     ),
   );
 });
-
 function isMine(userId, schedule) {
   return schedule && schedule.createdBy === userId;
 }
