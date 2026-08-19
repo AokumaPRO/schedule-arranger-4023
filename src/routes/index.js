@@ -89,7 +89,16 @@ app.get('/', async (c) => {
                   : ''}
               </div>
             `
-          : ''}
+          : html`
+              <div class="my-3">
+                <a href="/auth/github" class="btn btn-primary my-1">
+                  GitHub でログイン
+                </a>
+                <a href="/auth/google" class="btn btn-outline-danger my-1">
+                  Google でログイン
+                </a>
+              </div>
+            `}
       `,
     ),
   );
